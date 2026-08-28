@@ -16,8 +16,8 @@ class DPMSolverSampler(object):
 
     def register_buffer(self, name, attr):
         if type(attr) == torch.Tensor:
-            if attr.device != torch.device("cuda"):
-                attr = attr.to(torch.device("cuda"))
+            if attr.device != self.device:
+                attr = attr.to(self.device)
         setattr(self, name, attr)
 
     @torch.no_grad()
@@ -83,9 +83,4 @@ class DPMSolverSampler(object):
             predict_x0=True
         dpm_solver = DPM_Solver(model_fn, ns, predict_x0=predict_x0, thresholding=False)
         x = dpm_solver.sample(img, steps=S, skip_type="time_uniform", method="multistep", order=2, lower_order_final=True)
-        print('1',x.shape)
         return x
-
-
-
-        

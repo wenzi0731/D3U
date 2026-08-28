@@ -1,9 +1,11 @@
 import math
 import torch
 import torch.nn as nn
-from einops import repeat
-
-from timm.models.layers import to_2tuple
+try:
+    from timm.models.layers import to_2tuple
+except ImportError:
+    def to_2tuple(value):
+        return value if isinstance(value, tuple) else (value, value)
 
 
 class PatchEmbed(nn.Module):
@@ -86,7 +88,7 @@ def timestep_embedding(t, dim, max_period=10000, repeat_only=False):
                 [embedding, torch.zeros_like(embedding[:, :1])], dim=-1
             )
     else:
-        embedding = repeat(t, "b -> b d", d=dim)
+        embedding = t[:, None].expand(-1, dim)
     return embedding
 
 
@@ -110,7 +112,7 @@ class TimestepEmbedder(nn.Module):
         t_freq = timestep_embedding(t, self.frequency_embedding_size).type(self.mlp[0].weight.dtype)
         t_emb = self.mlp(t_freq)
         return t_emb
-    
+
 
 class Time_series_PatchEmbed(nn.Module):
     """ time series to Patch Embedding
@@ -180,4 +182,3 @@ if __name__ == '__main__':
     x=torch.randn((10,3,32,32))
 
     output=diffussion_model(x)
-    
