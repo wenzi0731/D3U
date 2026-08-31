@@ -4,11 +4,17 @@ import argparse
 import json
 
 import numpy as np
+import pandas as pd
 import torch
 from torch.utils.data import DataLoader, Subset
 
 from baseline1.data import HEEWConditionDataset
-from baseline1.metrics import summarize
+from baseline1.metrics import (
+    save_global_pearson_comparison,
+    save_global_pearson_plot,
+    save_random_timeseries_plots,
+    summarize,
+)
 from baseline1.models import build_condition_model, build_diffusion
 from baseline1.runtime import (
     choose_device,
@@ -151,6 +157,33 @@ def main() -> None:
         num_scenarios=scenario_count,
     )
     metrics = summarize(scenarios, targets, dataset.target_cols)
+    random_timeseries_dir = output_dir / "random_timeseries_50"
+    random_plot_paths = save_random_timeseries_plots(
+        total_real=targets,
+        total_generated=scenarios,
+        dates=all_dates,
+        output_dir=random_timeseries_dir,
+        labels=dataset.target_cols,
+        seed=seed,
+        n_plots=50,
+    )
+    pearson_dir = output_dir / "pearson"
+    pearson_metrics = save_global_pearson_comparison(
+        total_real=targets,
+        total_generated=scenarios,
+        output_dir=pearson_dir,
+        labels=dataset.target_cols,
+    )
+    global_pearson_path = save_global_pearson_plot(
+        total_real=targets,
+        save_path=output_dir / "global_pearson.png",
+        labels=dataset.target_cols,
+    )
+    global_metrics_path = output_dir / "global_metrics.csv"
+    pd.DataFrame([{**metrics, **pearson_metrics}]).to_csv(
+        global_metrics_path,
+        index=False,
+    )
     summary = {
         "method": "D3U-condition-only-baseline1",
         "checkpoint": str(resolve_path(args.checkpoint)),
@@ -161,6 +194,12 @@ def main() -> None:
         "seed": seed,
         "archive": str(archive),
         **metrics,
+        **pearson_metrics,
+        "global_metrics": str(global_metrics_path),
+        "global_pearson": str(global_pearson_path),
+        "pearson_dir": str(pearson_dir),
+        "random_timeseries_dir": str(random_timeseries_dir),
+        "random_timeseries_count": len(random_plot_paths),
     }
     (output_dir / "metrics_summary.json").write_text(
         json.dumps(summary, indent=2), encoding="utf-8"

@@ -100,6 +100,10 @@ The evaluator saves:
   targets, deterministic predictions, dates, seed, and channel names;
 - `metrics_summary.json` with channel RMSE, MAE, CRPS, nCRPS, 90% coverage,
   interval width, and mean nCRPS.
+- `random_timeseries_50/` with a seeded random selection of up to 50 test days;
+- `pearson/` with real, generated, and absolute-error Pearson heatmaps;
+- `global_pearson.png` and `global_metrics.csv`, including `Pearson_MAE` and
+  `Pearson_RMSE`.
 
 The NPZ file is intended for the shared final comparison evaluator so all
 methods receive identical post-processing and metrics.
