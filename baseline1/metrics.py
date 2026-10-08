@@ -21,7 +21,21 @@ def crps_map(samples: np.ndarray, target: np.ndarray) -> np.ndarray:
     return term1 - 0.5 * mean_pairwise
 
 
-def summarize(samples: np.ndarray, target: np.ndarray, labels: list[str]) -> dict[str, float]:
+def summarize(
+    samples: np.ndarray, target: np.ndarray, labels: list[str],
+    target_mean=None, target_std=None, seed: int = 42,
+    precision_recall_k: int = 5, max_precision_samples: int = 10_000,
+) -> dict[str, float]:
+    """Legacy three-argument API; provide training stats for baseline5 metrics."""
+    if target_mean is not None or target_std is not None:
+        if target_mean is None or target_std is None:
+            raise ValueError("Both training target_mean and target_std are required")
+        from baseline1.aligned_metrics import summarize as aligned_summarize
+
+        return aligned_summarize(
+            samples, target, labels, target_mean, target_std, seed,
+            precision_recall_k, max_precision_samples,
+        )
     ensemble_mean = samples.mean(axis=1)
     error = ensemble_mean - target
     scores = crps_map(samples, target)
