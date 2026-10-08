@@ -1,0 +1,17 @@
+Data/*
+!Data/README.md
+experiments/
+evaluation_results/
+checkpoints/
+test_results/
+*.pt
+*.pth
+*.ckpt
+*.npz
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+.DS_Store
+

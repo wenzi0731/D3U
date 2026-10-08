@@ -5,8 +5,6 @@ import yaml
 import argparse
 from model9_NS_transformer.diffusion_models.diffusion_utils import *
 from model9_NS_transformer.denoise_models.PatchDN import PatchDN
-from model9_NS_transformer.denoise_models.MLP import MLP
-from model9_NS_transformer.denoise_models.CNN import CNN_DiffusionUnet
 
 def dict2namespace(config):
     namespace = argparse.Namespace()
@@ -32,7 +30,7 @@ class Model(nn.Module):
         super(Model, self).__init__()
 
         with open(configs.diffusion_config_dir, "r") as f:
-            config = yaml.unsafe_load(f)
+            config = yaml.safe_load(f)
             diffusion_config = dict2namespace(config)
 
         diffusion_config.diffusion.timesteps = configs.timesteps
@@ -96,10 +94,12 @@ class Model(nn.Module):
 
         # CATE MLP
         if self.args.denoise_model=='MLP':
+            from model9_NS_transformer.denoise_models.MLP import MLP
             self.diffussion_model = MLP(diffusion_config, self.args)
         elif self.args.denoise_model=='PatchDN':
             self.diffussion_model = PatchDN(MTS_args=self.args,depth=self.args.depth, mlp_ratio=1.0)
         elif self.args.denoise_model=='CNN':
+            from model9_NS_transformer.denoise_models.CNN import CNN_DiffusionUnet
             self.diffussion_model = CNN_DiffusionUnet(diffusion_config, self.args)
 
     
@@ -250,4 +250,3 @@ class Model(nn.Module):
 
         dec_out = self.diffussion_model( y_t, t, enc_out)                    # dec_out: [bs x nvars x pred_len]
         return dec_out
-

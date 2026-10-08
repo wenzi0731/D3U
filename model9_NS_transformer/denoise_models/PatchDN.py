@@ -4,10 +4,38 @@ import torch
 import torch.nn as nn
 import numpy as np
 import math
-from timm.models.vision_transformer import Attention, Mlp
 import torch.nn.functional as F
 import argparse
-from einops import repeat
+
+try:
+    from timm.models.vision_transformer import Attention, Mlp
+except ImportError:
+    class Attention(nn.Module):
+        """PyTorch fallback matching the subset of timm's API used here."""
+
+        def __init__(self, dim, num_heads=8, qkv_bias=True, **kwargs):
+            super().__init__()
+            self.attention = nn.MultiheadAttention(
+                dim, num_heads, bias=qkv_bias, batch_first=True
+            )
+
+        def forward(self, x):
+            output, _ = self.attention(x, x, x, need_weights=False)
+            return output
+
+    class Mlp(nn.Module):
+        def __init__(self, in_features, hidden_features, act_layer=nn.GELU, drop=0.0):
+            super().__init__()
+            self.net = nn.Sequential(
+                nn.Linear(in_features, hidden_features),
+                act_layer(),
+                nn.Dropout(drop),
+                nn.Linear(hidden_features, in_features),
+                nn.Dropout(drop),
+            )
+
+        def forward(self, x):
+            return self.net(x)
 from .dm_layers.embedders import Time_series_PatchEmbed
 from .dm_layers.PatchTST_layers import positional_encoding
 # from model9_NS_transformer.ns_layers.RevIN import RevIN
@@ -221,14 +249,14 @@ class PatchDN(nn.Module):
         x = self.x_embedder(x)                                     #u: [bs * nvars x patch_num x d_model]
 
        
-        t = repeat(t, "b -> b d", d=nvars).reshape(-1)                             #t:  [bs * nvars ]
+        t = t[:, None].expand(-1, nvars).reshape(-1)                                #t:  [bs * nvars ]
         t = self.t_embedder(t)                                                      #t: (bs * nvars, D)
        
             
         if self.use_pretraining_condition:
             #y:[ bsz x pred_len  x n_vars ]
-            bsz, n_vars,pred_len=y.permute(0,2,1).shape 
-            y=y.reshape(bsz * n_vars,pred_len)         
+            bsz, n_vars,pred_len=y.permute(0,2,1).shape
+            y=y.permute(0,2,1).reshape(bsz * n_vars,pred_len)
             y = self.y_embedder(y)  
         else:
 
@@ -251,4 +279,3 @@ class PatchDN(nn.Module):
 
 
 
-    

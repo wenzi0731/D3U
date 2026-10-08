@@ -1,0 +1,50 @@
+run:
+  name: d3u_condition_only_baseline1
+  seed: 42
+  device: auto
+  num_workers: 0
+  output_root: experiments/baseline1
+
+data:
+  energy_path: Data/CN03_energy_cleaned.csv
+  weather_path: Data/weather_cleaned.csv
+  weather_feature_set: pv10
+  seq_len: 24
+
+condition_model:
+  hidden_dim: 128
+  num_layers: 2
+  num_heads: 4
+  dropout: 0.1
+  use_pv_year_head: true
+  pv_year_film_scale: 0.2
+
+diffusion_model:
+  hidden_dim: 128
+  depth: 2
+  num_heads: 4
+  patch_size: 4
+  stride: 2
+  padding_patch: end
+
+diffusion:
+  timesteps: 100
+  sampling_timesteps: 50
+  parameterization: x_start
+  sampler: dpm_solver
+  dpm_solver_steps: 20
+  eta: 0.0
+
+train:
+  batch_size: 32
+  condition_epochs: 80
+  diffusion_epochs: 300
+  condition_learning_rate: 0.0003
+  diffusion_learning_rate: 0.0001
+  weight_decay: 0.0001
+  gradient_clip: 1.0
+  patience: 30
+
+eval:
+  batch_size: 8
+  num_scenarios: 100
